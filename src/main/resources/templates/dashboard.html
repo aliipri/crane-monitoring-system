@@ -1,0 +1,338 @@
+<!doctype html>
+<html lang="ru" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Мониторинг кранового оборудования</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+    <script th:src="@{/js/app.js}" defer></script>
+</head>
+<body>
+<div class="layout">
+    <aside class="sidebar">
+        <div class="brand">
+            <span class="brand__mark">К</span>
+            <div>
+                <strong>Crane Monitor</strong>
+                <span>инженерная аналитика</span>
+            </div>
+        </div>
+
+        <nav class="nav" aria-label="Основные разделы">
+            <a class="nav__item" th:href="@{/}">Список кранов</a>
+            <a class="nav__item nav__item--active" href="#summary">Панель анализа</a>
+            <a class="nav__item" href="#uploads">Выгрузки TXT</a>
+            <a class="nav__item" href="#events">События</a>
+            <a class="nav__item" href="#report">Отчётность</a>
+        </nav>
+
+
+    </aside>
+
+    <main class="content">
+        <header class="topbar">
+            <div>
+                <p class="eyebrow">Анализ данных регистратора параметров</p>
+                <h1 th:text="${dashboard.crane.model}">КС-55713-1К</h1>
+            </div>
+            <div class="topbar__actions">
+                <form class="upload-form" th:action="@{/uploads}" method="post" enctype="multipart/form-data">
+                    <label class="file-field">
+                        <input type="file" name="file" accept=".txt">
+                        <span class="file-field__name" data-default-label="TXT">TXT</span>
+                    </label>
+                    <button class="button button--primary" type="submit">Загрузить</button>
+                </form>
+                <form th:action="@{/cranes/{id}/reports(id=${dashboard.crane.id})}"
+                      method="post" target="_blank" rel="noopener">
+                    <button class="button button--secondary" type="submit">Сформировать отчёт</button>
+                </form>
+            </div>
+        </header>
+
+        <div class="alert alert--success" th:if="${success}" th:text="${success}"></div>
+        <div class="alert alert--error" th:if="${error}" th:text="${error}"></div>
+
+        <section class="section section--crane" id="summary">
+            <div class="crane-card">
+                <div>
+                    <p class="section-label">Карточка крана</p>
+                    <h2 th:text="${dashboard.crane.model}">КС-55713-1К</h2>
+                    <p class="muted">Прибор безопасности: <span th:text="${dashboard.crane.safetyDevice}">ОНК-160М</span></p>
+                </div>
+                <dl class="facts">
+                    <div>
+                        <dt>Инвентарный номер</dt>
+                        <dd th:text="${dashboard.crane.inventoryNumber}">INV-0427</dd>
+                    </div>
+                    <div>
+                        <dt>Заводской номер</dt>
+                        <dd th:text="${dashboard.crane.serialNumber}">SN-1184-22</dd>
+                    </div>
+                    <div>
+                        <dt>Ввод в эксплуатацию</dt>
+                        <dd th:text="${dashboard.crane.commissioningDate}">2021-04-15</dd>
+                    </div>
+                    <div>
+                        <dt>Установка троса</dt>
+                        <dd th:text="${dashboard.crane.ropeInstallationDate}">2025-02-10</dd>
+                    </div>
+                </dl>
+            </div>
+
+            <div class="metrics">
+                <article class="metric" th:each="metric : ${dashboard.metrics}" th:classappend="'metric--' + ${metric.tone}">
+                    <span th:text="${metric.title}">Индекс интенсивности</span>
+                    <strong>
+                        <span th:text="${metric.value}">0.68</span><small th:text="${metric.unit}"></small>
+                    </strong>
+                    <p th:text="${metric.description}">Средняя эксплуатационная нагрузка</p>
+                </article>
+            </div>
+        </section>
+
+        <section class="grid grid--analytics">
+            <article class="panel">
+                <div class="panel__head">
+                    <div>
+                        <p class="section-label">Нагрузочный профиль</p>
+                        <h2>Распределение по диапазонам</h2>
+                    </div>
+                    <span class="badge badge--warning" th:text="${dashboard.latestPeriod}">май 2026</span>
+                </div>
+
+                <div class="load-profile">
+                    <div class="load-row" th:each="segment : ${dashboard.loadProfile}">
+                        <div class="load-row__meta">
+                            <strong th:text="${segment.range}">40-80 %</strong>
+                            <span th:text="${segment.interpretation}">средний режим</span>
+                        </div>
+                        <div class="bar-track">
+                            <div class="bar-fill" th:classappend="'bar-fill--' + ${segment.tone}"
+                                 th:style="|--value: ${segment.percent}%;|"></div>
+                        </div>
+                        <b th:text="|${segment.percent}%|">46%</b>
+                    </div>
+                </div>
+            </article>
+
+            <article class="panel">
+                <div class="panel__head">
+                    <div>
+                        <p class="section-label">Интеллектуальный прогноз</p>
+                        <h2>Оценка следующего периода</h2>
+                    </div>
+                    <span class="badge" th:text="${dashboard.prediction.modelName}">CNN-LSTM</span>
+                </div>
+
+                <div class="prediction">
+                    <div class="prediction__dial">
+                        <span th:text="${dashboard.prediction.available} ? |${dashboard.prediction.predictedResource}%| : 'нет'">58%</span>
+                        <small>остаточный ресурс</small>
+                    </div>
+                    <div class="prediction__body">
+                        <dl class="prediction__facts">
+                            <div>
+                                <dt>Прогноз износа</dt>
+                                <dd th:text="${dashboard.prediction.available} ? |${dashboard.prediction.predictedWear}%| : 'нет'">42%</dd>
+                            </div>
+                            <div>
+                                <dt>Период</dt>
+                                <dd th:text="${dashboard.prediction.period}">следующий период</dd>
+                            </div>
+                        </dl>
+                        <p class="status-line" th:text="${dashboard.prediction.predictedStatus}">Требуется плановый контроль</p>
+                    </div>
+                </div>
+            </article>
+        </section>
+
+        <section class="grid grid--charts">
+            <article class="panel">
+                <div class="panel__head">
+                    <div>
+                        <p class="section-label">Динамика</p>
+                        <h2>Изменение износа троса</h2>
+                    </div>
+                    <span class="badge badge--danger">рост</span>
+                </div>
+                <div class="trend-chart">
+                    <div class="trend-chart__item" th:each="point : ${dashboard.wearTrend}">
+                        <div class="trend-chart__bar trend-chart__bar--wear" th:style="|--value: ${point.value}%;|">
+                            <span th:text="|${point.value}%|">37%</span>
+                        </div>
+                        <small th:text="${point.label}">Май</small>
+                    </div>
+                </div>
+            </article>
+
+            <article class="panel">
+                <div class="panel__head">
+                    <div>
+                        <p class="section-label">Динамика</p>
+                        <h2>Остаточный ресурс</h2>
+                    </div>
+                    <span class="badge badge--success">достаточный</span>
+                </div>
+                <div class="trend-chart">
+                    <div class="trend-chart__item" th:each="point : ${dashboard.resourceTrend}">
+                        <div class="trend-chart__bar trend-chart__bar--resource" th:style="|--value: ${point.value}%;|">
+                            <span th:text="|${point.value}%|">63%</span>
+                        </div>
+                        <small th:text="${point.label}">Май</small>
+                    </div>
+                </div>
+            </article>
+        </section>
+
+        <section class="panel" id="uploads">
+            <div class="panel__head">
+                <div>
+                    <p class="section-label">История</p>
+                    <h2>Загруженные TXT-файлы</h2>
+                </div>
+                <span class="badge" th:text="|${dashboard.uploadCount} файлов|">3 файла</span>
+            </div>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                    <tr>
+                        <th>Файл</th>
+                        <th>Дата загрузки</th>
+                        <th>Период</th>
+                        <th>Циклы</th>
+                        <th>Перегрузки</th>
+                        <th>Статус</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="upload : ${dashboard.uploads}">
+                        <td th:text="${upload.fileName}">ks55713_2026-05.txt</td>
+                        <td th:text="${#temporals.format(upload.uploadedAt, 'dd.MM.yyyy HH:mm')}">28.05.2026 14:20</td>
+                        <td th:text="|${#temporals.format(upload.periodStart, 'dd.MM.yyyy')} - ${#temporals.format(upload.periodEnd, 'dd.MM.yyyy')}|">01.05.2026 - 27.05.2026</td>
+                        <td th:text="${upload.cycles}">824</td>
+                        <td th:text="${upload.overloads}">6</td>
+                        <td><span class="status-pill" th:text="${upload.status}">Обработан</span></td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="panel" id="events">
+            <div class="panel__head">
+                <div>
+                    <p class="section-label">События</p>
+                    <h2>Перегрузки, ошибки и защиты</h2>
+                </div>
+                <span class="badge badge--danger">контроль</span>
+            </div>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                    <tr>
+                        <th>Время</th>
+                        <th>Тип</th>
+                        <th>Описание</th>
+                        <th>Важность</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="event : ${dashboard.events}">
+                        <td th:text="${#temporals.format(event.eventTime, 'dd.MM.yyyy HH:mm')}">19.05.2026 11:42</td>
+                        <td th:text="${event.eventType}">Перегрузка</td>
+                        <td th:text="${event.description}">Превышение диапазона 100 % при подъеме</td>
+                        <td>
+                            <span class="severity"
+                                  th:classappend="${event.severity == 'Высокая'} ? 'severity--danger' : 'severity--warning'"
+                                  th:text="${event.severity}">Высокая</span>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="panel" id="workloads">
+            <div class="panel__head">
+                <div>
+                    <p class="section-label">Наработка механизмов</p>
+                    <h2>Продолжительность работы по периодам</h2>
+                </div>
+                <span class="badge">часы</span>
+            </div>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                    <tr>
+                        <th>Период</th>
+                        <th>Лебёдка</th>
+                        <th>Изменение угла стрелы</th>
+                        <th>Изменение длины стрелы</th>
+                        <th>Поворот</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="workload : ${dashboard.workloads}">
+                        <td th:text="|${#temporals.format(workload.periodStart, 'dd.MM.yyyy')} - ${#temporals.format(workload.periodEnd, 'dd.MM.yyyy')}|"></td>
+                        <td th:text="${workload.hoistHours}"></td>
+                        <td th:text="${workload.boomAngleHours}"></td>
+                        <td th:text="${workload.boomLengthHours}"></td>
+                        <td th:text="${workload.rotationHours}"></td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="panel" id="inspections">
+            <div class="panel__head">
+                <div>
+                    <p class="section-label">Контроль троса</p>
+                    <h2>История визуальных осмотров</h2>
+                </div>
+                <span class="badge badge--success">осмотры</span>
+            </div>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                    <tr>
+                        <th>Дата</th>
+                        <th>Обрывы проволок</th>
+                        <th>Потеря диаметра</th>
+                        <th>Коррозия</th>
+                        <th>Истирание</th>
+                        <th>Деформация</th>
+                        <th>Смазка</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="inspection : ${dashboard.inspections}">
+                        <td th:text="${#temporals.format(inspection.inspectionDate, 'dd.MM.yyyy')}"></td>
+                        <td th:text="${inspection.brokenWiresCount}"></td>
+                        <td th:text="|${inspection.diameterLossPercent}%|"></td>
+                        <td th:text="${inspection.corrosionScore}"></td>
+                        <td th:text="${inspection.abrasionScore}"></td>
+                        <td th:text="${inspection.deformationScore}"></td>
+                        <td th:text="${inspection.lubricationScore}"></td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="report-band" id="report">
+            <div>
+                <p class="section-label">Отчёт</p>
+                <h2>Итоговый документ для инженерной оценки</h2>
+                <p>Включает сведения о кране, период анализа, циклы, распределение нагрузки, перегрузки, класс интенсивности, износ, остаточный ресурс, статус и графики.</p>
+            </div>
+            <form th:action="@{/cranes/{id}/reports(id=${dashboard.crane.id})}"
+                  method="post" target="_blank" rel="noopener">
+                <button class="button button--primary" type="submit">Сформировать</button>
+            </form>
+        </section>
+    </main>
+</div>
+</body>
+</html>

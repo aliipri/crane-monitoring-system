@@ -1,0 +1,35 @@
+# Java / Maven
+target/
+*.class
+*.jar
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs / generated files
+*.log
+*.err
+generated/
+uploads/
+reports/
+
+# Environment / secrets
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# ML artifacts generated during training
+ml/models/*
+!ml/models/README.md

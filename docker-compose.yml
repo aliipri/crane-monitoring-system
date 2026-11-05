@@ -1,0 +1,20 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: crane-monitoring-postgres
+    environment:
+      POSTGRES_DB: crane_monitoring
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - crane-monitoring-db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d crane_monitoring"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  crane-monitoring-db:

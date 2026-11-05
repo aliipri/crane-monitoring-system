@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="ru" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Краны | Crane Monitor</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+    <script th:src="@{/js/app.js}" defer></script>
+</head>
+<body>
+<div class="layout">
+    <aside class="sidebar">
+        <div class="brand">
+            <span class="brand__mark">К</span>
+            <div>
+                <strong>Crane Monitor</strong>
+                <span>инженерная аналитика</span>
+            </div>
+        </div>
+
+        <nav class="nav" aria-label="Основные разделы">
+            <a class="nav__item nav__item--active" th:href="@{/}">Список кранов</a>
+        </nav>
+
+
+    </aside>
+
+    <main class="content">
+        <header class="topbar">
+            <div>
+                <p class="eyebrow">Парк оборудования</p>
+                <h1>Краны</h1>
+                <p class="page-description">
+                    Список формируется автоматически по загруженным TXT-файлам.
+                </p>
+            </div>
+            <form class="upload-form" th:action="@{/uploads}" method="post" enctype="multipart/form-data">
+                <label class="file-field file-field--wide">
+                    <input type="file" name="file" accept=".txt" required>
+                    <span class="file-field__name" data-default-label="Выбрать TXT">Выбрать TXT</span>
+                </label>
+                <button class="button button--primary" type="submit">Загрузить</button>
+            </form>
+        </header>
+
+        <div class="alert alert--success" th:if="${success}" th:text="${success}"></div>
+        <div class="alert alert--error" th:if="${error}" th:text="${error}"></div>
+
+        <section class="crane-list" th:if="${!#lists.isEmpty(cranes)}">
+            <a class="crane-list-card"
+               th:each="crane : ${cranes}"
+               th:href="@{/cranes/{id}(id=${crane.id})}">
+                <div class="crane-list-card__head">
+                    <div>
+                        <p class="section-label">Карточка крана</p>
+                        <h2 th:text="${crane.model}">ЕДК-1000</h2>
+                    </div>
+                    <span class="badge" th:text="${crane.latestPeriod}">апрель 2026</span>
+                </div>
+
+                <dl class="crane-list-card__facts">
+                    <div>
+                        <dt>Инвентарный номер</dt>
+                        <dd th:text="${crane.inventoryNumber}">ЕДК-1000-01</dd>
+                    </div>
+                    <div>
+                        <dt>Заводской номер</dt>
+                        <dd th:text="${crane.serialNumber}">692</dd>
+                    </div>
+                    <div>
+                        <dt>Прибор безопасности</dt>
+                        <dd th:text="${crane.safetyDevice}">ОНК-160С</dd>
+                    </div>
+                    <div>
+                        <dt>Загружено файлов</dt>
+                        <dd th:text="${crane.uploadCount}">6</dd>
+                    </div>
+                </dl>
+
+                <div class="crane-list-card__state">
+                    <div th:if="${crane.wearPercent != null}">
+                        <span>Износ</span>
+                        <strong th:text="|${crane.wearPercent}%|">37%</strong>
+                    </div>
+                    <div th:if="${crane.remainingResource != null}">
+                        <span>Остаточный ресурс</span>
+                        <strong th:text="|${crane.remainingResource}%|">63%</strong>
+                    </div>
+                    <p th:text="${crane.status}">Контроль в плановом режиме</p>
+                </div>
+
+                <span class="crane-list-card__link">Открыть панель анализа</span>
+            </a>
+        </section>
+
+        <section class="empty-state" th:if="${#lists.isEmpty(cranes)}">
+            <p class="section-label">Нет данных</p>
+            <h2>Загрузите первый TXT-файл</h2>
+            <p>После обработки файла кран появится здесь, а его данные будут доступны в отдельной панели анализа.</p>
+        </section>
+    </main>
+</div>
+</body>
+</html>
